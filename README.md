@@ -1,2 +1,3 @@
-# cloudstack_archlinux
-Apache CloudStack packaging template for Arch Linux
+# Apache CloudStack for Arch Linux
+
+This repository contains experimental `PKGBUILD` + associated files for Apache CloudStack installation on Arch Linux.
