@@ -1,0 +1,9 @@
+[Match]
+Name=cloudbr0
+
+[Network]
+ConfigureWithoutCarrier=yes
+
+[Address]
+Address=172.20.0.1/24
+Broadcast=172.20.0.255

@@ -1,0 +1,18 @@
+post_install() {
+
+  # Generate mandatory GUID value
+  GUID=$(uuidgen)
+  FILE="/etc/cloudstack/agent/agent.properties"
+  if [[ ! $(cat "${FILE}" | sed -nr 's/^guid=(.*)/\1/p') ]]; then
+    sed -i -r "s/^(guid=)/\1$GUID/" "${FILE}"
+  fi
+
+  # Generate mandatory UUID value
+  UUID=$(uuidgen)
+  if [[ ! $(cat "${FILE}" | sed -nr 's/^local\.storage\.uuid=(.*)/\1/p') ]]; then
+    sed -i -r "s/^(local\.storage\.uuid=)/\1$UUID/" "${FILE}"
+  fi
+}
+
+#post_upgrade() {
+#}

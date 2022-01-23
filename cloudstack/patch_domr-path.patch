@@ -1,0 +1,14 @@
+From: Pekka Helenius <pekka.helenius@fjordtek.com>
+Subject: Fix hard-coded value
+
+--- a/plugins/hypervisors/kvm/src/main/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResource.java	2022-01-22 19:34:51.577142694 +0200
++++ b/plugins/hypervisors/kvm/src/main/java/com/cloud/hypervisor/kvm/resource/LibvirtComputingResource.java	2022-01-22 19:37:51.473675363 +0200
+@@ -908,7 +908,7 @@
+             throw new ConfigurationException("Unable to find the ovstunnel.py");
+         }
+ 
+-        _routerProxyPath = Script.findScript("scripts/network/domr/", "router_proxy.sh");
++        _routerProxyPath = Script.findScript(domrScriptsDir, "router_proxy.sh");
+         if (_routerProxyPath == null) {
+             throw new ConfigurationException("Unable to find the router_proxy.sh");
+         }

@@ -1,0 +1,552 @@
+# Maintainer: Pekka Helenius <pekka dot helenius at fjordtek dot com>
+
+# Skip Maven tests?
+skip_tests=true
+
+# Install non-OSS (open source software) Java plugins?
+# Adds up to 1.5GB to the installation size
+install_non_oss=true
+
+maven_options=(
+# CloudStack profile options
+  -P systemvm
+  #-P eclipse
+  #-P developer
+  #-P impatient
+  #-P vmware
+  #-P quality
+  #-P disablecheckstyle
+  #-P enablefindbugs
+
+  -Dorg.slf4j.simpleLogger.defaultLogLevel=warn
+)
+
+pythonver=3.7
+
+pkgbase=cloudstack
+pkgname=(
+  'cloudstack-agent'
+  'cloudstack-management'
+  'cloudstack-ui'
+  'cloudstack-common'
+  'cloudstack-cli'
+  'cloudstack-usage'
+  'cloudstack-mysql-ha'
+#  'cloudstack-baremetal-agent'
+#  'cloudstack-marvin'
+#  'cloudstack-integration-tests'
+#  'cloudstack-docs'
+)
+
+_commit=44c08b5acc598972b4f0af576ffdea4e2447cb41 # 4.16.0.0
+pkgver=4.16.0.0.r0.g44c08b5acc
+pkgrel=1
+
+groups=(cloudstack)
+pkgdesc='Open Source Cloud Computing'
+arch=('any')
+url='https://cloudstack.apache.org/'
+license=('Apache2')
+
+depends=(
+  'systemd'
+  'logrotate'
+  'libvirt'
+  'jre11-openjdk'
+  'java-runtime-common'
+  'mysql'
+  'python'
+  'python-setuptools'
+  'python-mysql-connector'
+
+  # Both iptables & ebtables executables is required by cloudstack-agent
+  'iptables-nft'
+
+  'ipmitool'
+)
+makedepends=(
+  # CloudStack source retrieval
+  'git'
+  'wget'
+
+  # CloudStack compilation
+  'jdk11-openjdk'
+  'maven'
+
+  # CloudStack UI compilation
+    # <16 required by cloudstack-ui npm compilation process due to implementation issues
+    # See: https://github.com/sass/node-sass/issues/3077
+  'nodejs<16'
+  'npm'
+  'gcc'
+
+#  # CloudStack apidocs compilation
+#  'python'
+)
+optdepends=(
+  'qemu: A generic and open source machine emulator and virtualizer'
+  'cloudmonkey: Command line interface for Apache CloudStack management'
+  'python-solidfire-sdk: SolidFire Python SDK for application integration'
+  'edk2-ovmf: Firmware for Virtual Machines (x86_64, i686)'
+  'openvswitch: Production Quality, Multilayer Open Virtual Switch'
+  'nfs-utils: Support programs for Network File Systems'
+)
+
+source=(
+  "${pkgbase}::git+https://github.com/apache/${pkgbase}.git#commit=${_commit}"
+  "cloudstack.sysuser.conf"
+  "uefi.properties"
+  "patch_domr-path.patch"
+  "patch_python3.patch"
+  "cloudstack.mysql.conf"
+
+  "cloudbr0.netdev"
+  "cloudbr0.network"
+  "cloudbr1.netdev"
+  "cloudbr1.network"
+)
+
+if [[ ${skip_tests} == "true" ]]; then
+  maven_options+=(-DskipTests)
+fi
+
+if [[ ${install_non_oss} == "true" ]]; then
+  source+=(
+    "${pkgbase}-nonoss::git+https://github.com/shapeblue/${pkgbase}-nonoss.git"
+  )
+  maven_options+=(-Dnoredist)
+fi
+# options=(!emptydirs)
+
+sha256sums=('SKIP'
+            '1ad0d6b9a15889763bea92c71ecf9dc44e11e408260cdc54efa4d7acd849230f'
+            '2ac98910f320785ebbc682a426f4eef6d8b4ca5c8c55195dc4c048072fa93fb6'
+            '8691b6b47164d11d3c1eff90a0108e694427463fb3d49608628a5d0121b6a5d4'
+            '2515da6f9195c7e3bce321bd328743ee4c685ccd01ddb4099202637036eab40e'
+            '69b315a10f88c24d6fe2b248b0593691d656f8992e6e37f8b0a4d2d4a9caca40'
+            '4d5d5c4d923ceec434403fc416a4d09a820fdb49ece6e4f6d0b32a05014446be'
+            'c12612ebca5c968c3648b858a1c23961963cf04d3a9f476400a0f3861952c7fd'
+            'dfc16a17e57b9d174aae8abee6c04b8a6b02ffc96909315f302199e43dea9b9e'
+            '49c7271d095eb7ba4d724edc615af99646bae4b7fa57ef6502e14ad452e6d602'
+            'SKIP')
+
+pkgver() {
+  cd ${pkgbase}
+  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+prepare() {
+  if [[ ${install_non_oss} == "true" ]]; then
+    msg2 "Installing non-OSS CloudStack plugins ($HOME/.m2)"
+    cd ${pkgbase}-nonoss
+    ./install-non-oss.sh
+  fi
+
+  cd ${srcdir}/${pkgbase}
+  patch -Np1 -i ../patch_domr-path.patch
+  patch -Np1 -i ../patch_python3.patch
+
+  rm build/replace.properties
+
+  # Compile-time variables
+  echo "
+AGENTCLASSPATH=
+AGENTLOGDIR=/var/log/cloudstack/agent
+AGENTLOG=/var/log/cloudstack/agent/agent.log
+AGENTSYSCONFDIR=/etc/cloudstack/agent
+APISERVERLOG=/var/log/cloudstack/management/apilog.log
+BINDIR=/usr/bin
+COMMONLIBDIR=/usr/share/cloudstack-common
+COMPONENTS-SPEC=components-premium.xml
+CONFIGUREVARS=
+DBDRIVER=jdbc:mysql
+DBHOST=localhost
+DBPW=cloud
+DBROOTPW=
+DBUSER=cloud
+DEPSCLASSPATH=
+DOCDIR=
+IPALOCATORLOG=/var/log/cloudstack/management/ipallocator.log
+JAVADIR=/usr/share/java
+LIBEXECDIR=/usr/libexec
+LOCKDIR=/var/lock
+MSCLASSPATH=
+MSCONF=/etc/cloudstack/management
+MSLOGDIR=/var/log/cloudstack/management
+MSLOG=/var/log/cloudstack/management/management-server.log
+MSMNTDIR=/var/cloudstack/mnt
+MSUSER=cloud
+PACKAGE=cloudstack
+PIDDIR=/run
+PLUGINJAVADIR=/usr/share/cloudstack-management/plugin
+PREMIUMJAVADIR=/usr/share/cloudstack-management/premium
+PYTHONDIR=/usr/lib/python${pythonver}/site-packages/
+REMOTEHOST=localhost
+SERVERSYSCONFDIR=/etc/cloudstack/server
+SETUPDATADIR=/usr/share/cloudstack-management/setup
+SYSCONFDIR=/etc
+SYSTEMCLASSPATH=
+SYSTEMJARS=
+USAGECLASSPATH=
+USAGELOG=/var/log/cloudstack/usage/usage.log
+USAGESYSCONFDIR=/etc/cloudstack/usage
+VERSION=$(printf "%s" $(git describe --long --tags | cut -d- -f1))
+" >> build/replace.properties
+
+}
+
+build() {
+  cd ${pkgbase}
+
+  export JAVA_HOME=/usr/lib/jvm/java-11-openjdk/
+  export PATH=$JAVA_HOME/bin:$PATH
+
+  mvn clean install ${maven_options[*]}
+
+  # CloudStack UI
+  cd ui && npm install && npm run build && cd ..
+}
+
+package_cloudstack-agent() {
+
+  depends=('python' 'jre11-openjdk' 'logrotate' 'openssh' 'systemd' 'iptables-nft')
+  pkgdesc='Apache CloudStack Agent'
+  backup=(
+    etc/cloudstack/agent/agent.properties
+    etc/cloudstack/agent/uefi.properties
+  )
+  install=cloudstack-agent.install
+
+  cd ${pkgbase}
+
+  mkdir -p ${pkgdir}/etc/{cloudstack/agent,default,profile.d}
+  mkdir -p ${pkgdir}/var/{cache/cloudstack,log/cloudstack}
+
+  # TODO: Missing doc files: INSTALL.md.gz, LICENSE.gz, NOTICE.gz, changelog.gz, copyright
+  mkdir -p ${pkgdir}/usr/{bin,share/cloudstack-agent} #,share/doc/cloudstack-agent}
+
+  mkdir -p ${pkgdir}/usr/share/cloudstack-agent/{plugins,lib,scripts}
+
+  install -Dm0644 plugins/hypervisors/kvm/target/cloud-plugin-hypervisor-kvm*.jar ${pkgdir}/usr/share/cloudstack-agent/lib/
+  install -D plugins/hypervisors/kvm/target/dependencies/* ${pkgdir}/usr/share/cloudstack-agent/lib/
+
+  mkdir -p ${pkgdir}/usr/lib/systemd/system
+  install -Dm0644 packaging/systemd/cloudstack-agent.service ${pkgdir}/usr/lib/systemd/system/
+  install -Dm0644 packaging/systemd/cloudstack-agent.default ${pkgdir}/etc/default/cloudstack-agent
+  install -Dm0644 packaging/systemd/cloudstack-rolling-maintenance@.service ${pkgdir}/usr/lib/systemd/system/
+  install -Dm0644 agent/target/transformed/cloudstack-agent.logrotate ${pkgdir}/etc/logrotate.d/cloudstack-agent
+
+  install -Dm0755 agent/target/transformed/cloud-setup-agent ${pkgdir}/usr/bin/cloudstack-setup-agent
+  install -Dm0755 agent/target/transformed/cloud-ssh ${pkgdir}/usr/bin/cloudstack-ssh
+  install -Dm0755 agent/target/transformed/cloudstack-agent-profile.sh ${pkgdir}/etc/profile.d/cloudstack-agent-profile.sh
+
+  install -Dm0755 agent/target/transformed/cloudstack-agent-upgrade ${pkgdir}/usr/bin/
+  install -Dm0755 agent/target/transformed/cloud-guest-tool ${pkgdir}/usr/bin/cloudstack-guest-tool
+  install -Dm0644 agent/target/transformed/libvirtqemuhook ${pkgdir}/usr/share/cloudstack-agent/lib/
+  install -Dm0644 agent/target/transformed/rolling-maintenance ${pkgdir}/usr/share/cloudstack-agent/lib/
+
+  install -D agent/target/transformed/environment.properties ${pkgdir}/etc/cloudstack/agent/
+  install -D agent/target/transformed/agent.properties ${pkgdir}/etc/cloudstack/agent/
+  install -D agent/target/transformed/log4j-cloud.xml ${pkgdir}/etc/cloudstack/agent/
+
+  # Fix: Add missing uefi.properties file
+  install -Dm0644 ${srcdir}/uefi.properties ${pkgdir}/etc/cloudstack/agent/
+
+  # Fix: Add missing log path
+  mkdir -p ${pkgdir}/var/log/cloudstack/agent
+
+  # Fix: Install missing script files
+  # TODO: Some script files have referrals to unknown 'cmdline' file.
+  cp -r systemvm/agent/scripts/* ${pkgdir}/usr/share/cloudstack-agent/scripts/
+  chmod 0755 ${pkgdir}/usr/share/cloudstack-agent/scripts/*.sh
+  for i in $(find ${pkgdir}/usr/share/cloudstack-agent/scripts/ -iname "*.sh"); do
+    sed -i 's/\/cloud\//\/cloudstack\//g' "${i}"
+    sed -i 's/\/usr\/local\//\/usr\//g' "${i}"
+  done
+
+  # Fix: Add & correct missing paths
+  echo "
+# Full path: paths.script + value here
+# See environment.properties
+hypervisor.scripts.dir=scripts/vm/hypervisor
+kvm.scripts.dir=scripts/vm/hypervisor/kvm
+network.scripts.dir=scripts/vm/network/vnet
+storage.scripts.dir=scripts/storage/qcow2
+
+public.network.device=cloudbr0
+private.network.device=cloudbr1
+#guest.network.device=
+
+#ipv6disabled=true
+
+host.cache.location=/var/cache/cloudstack
+
+# BridgeVifDriver or DirectVifDriver
+libvirt.vif.driver=com.cloud.hypervisor.kvm.resource.BridgeVifDriver
+" >> ${pkgdir}/etc/cloudstack/agent/agent.properties
+}
+
+package_cloudstack-management() {
+
+  depends=('python' 'jre11-openjdk' 'mysql' 'systemd' 'ipmitool')
+  pkgdesc='Management for Apache CloudStack'
+  install=cloudstack-management.install
+  noextract=(
+    systemvmtemplate-4.16.0-kvm.qcow2.bz2
+    systemvmtemplate-4.16.0-xen.vhd.bz2
+  )
+  backup=(
+    etc/cloudstack/management/server.properties
+    etc/cloudstack/management/db.properties
+    etc/cloudstack/management/environment.properties
+  )
+
+  cd ${pkgbase}
+
+  mkdir -p ${pkgdir}/etc/cloudstack/management
+  mkdir -p ${pkgdir}/etc/security/limits.d/
+
+  mkdir -p ${pkgdir}/etc/sudoers.d/
+  chmod 0750 ${pkgdir}/etc/sudoers.d/
+
+  mkdir -p ${pkgdir}/usr/share/cloudstack-management/{lib,setup,templates/systemvm,plugin,premium,webapp}
+  mkdir -p ${pkgdir}/var/cache/cloudstack/management
+  mkdir -p ${pkgdir}/var/log/cloudstack/{management,ipallocator}
+  mkdir -p ${pkgdir}/var/lib/cloudstack/{management,mnt}
+
+  cp -r client/target/utilities/scripts/db/* ${pkgdir}/usr/share/cloudstack-management/setup/
+  cp -r ui/dist/* ${pkgdir}/usr/share/cloudstack-management/webapp/
+  cp -r client/target/classes/META-INF/webapp/WEB-INF ${pkgdir}/usr/share/cloudstack-management/webapp/
+
+  for i in \
+  cloud-migrate-databases \
+  cloud-setup-databases \
+  cloud-setup-management \
+  cloud-setup-encryption \
+  cloud-sysvmadm \
+  cloud-update-xenserver-licenses \
+  cloud-set-guest-password \
+  cloud-set-guest-sshkey
+  do
+    install -D client/target/utilities/bin/${i} ${pkgdir}/usr/bin/$(echo ${i} | sed 's/cloud\-/cloudstack\-/')
+  done
+
+  cp client/target/conf/* ${pkgdir}/etc/cloudstack/management/
+
+  cp client/target/cloud-client-ui-*.jar ${pkgdir}/usr/share/cloudstack-management/lib/
+  for i in $(find ${pkgdir}/usr/share/cloudstack-management/lib/ -iname "cloud-client-ui*"); do
+    mv "${i}" $(echo "${i}" | sed 's/cloud\-client\-ui/cloudstack/')
+  done
+
+  cp client/target/lib/*jar ${pkgdir}/usr/share/cloudstack-management/lib/
+  cp -rf engine/schema/dist/systemvm-templates/* ${pkgdir}/usr/share/cloudstack-management/templates/systemvm/
+  rm -rf ${pkgdir}/usr/share/cloudstack-management/templates/systemvm/md5sum.txt
+
+  # Nast hack for a couple of configuration files
+  cp -f server/target/conf/cloudstack-limits.conf ${pkgdir}/etc/security/limits.d/cloudstack-limits.conf
+  cp -f server/target/conf/cloudstack-sudoers ${pkgdir}/etc/sudoers.d/cloudstack
+
+  # Allow non-root user to add a KVM host
+  j=$(echo "$(grep Cmnd_Alias ${pkgdir}/etc/sudoers.d/cloudstack), /usr/bin/cloudstack-setup-agent" | sed 's/\//\\\//g')
+  sed -i -i "s/^Cmnd_Alias.*/$j/" ${pkgdir}/etc/sudoers.d/cloudstack
+
+  chmod 0440 ${pkgdir}/etc/sudoers.d/cloudstack
+
+  # TODO: This should all be in /etc/cloudstack/management
+  ln -s /etc/cloudstack/management ${pkgdir}/usr/share/cloudstack-management/conf
+  ln -s /var/log/cloudstack/management ${pkgdir}/usr/share/cloudstack-management/logs
+
+  mkdir -p ${pkgdir}/usr/lib/systemd/system
+  install -m0644 packaging/systemd/cloudstack-management.service ${pkgdir}/usr/lib/systemd/system/cloudstack-management.service
+  install -Dm0644 packaging/systemd/cloudstack-management.default ${pkgdir}/etc/default/cloudstack-management
+
+  # Fix: Add missing 'cloud' user to the system
+  mkdir -p ${pkgdir}/usr/lib/sysusers.d
+  install -Dm0644 ${srcdir}/cloudstack.sysuser.conf ${pkgdir}/usr/lib/sysusers.d/cloudstack.conf
+
+  # Fix: Set global database configuration values
+  mkdir -p ${pkgdir}/etc/mysql/conf.d/
+  install -Dm0644 ${srcdir}/cloudstack.mysql.conf ${pkgdir}/etc/mysql/conf.d/cloudstack.cf
+
+  rm -f ${pkgdir}/usr/share/cloudstack-management/webapp/config.json
+  ln -s /etc/cloudstack/ui/config.json ${pkgdir}/usr/share/cloudstack-management/webapp/config.json
+
+  # Fix: Symlink log4j.xml
+  ln -s /etc/cloudstack/management/log4j-cloud.xml ${pkgdir}/etc/cloudstack/management/log4j.xml
+
+}
+
+package_cloudstack-ui() {
+
+  depends=()
+  pkgdesc='Apache CloudStack UI'
+
+  cd ${pkgbase}
+
+  # TODO: Missing doc files: INSTALL.md.gz, LICENSE.gz, NOTICE.gz, changelog.gz, copyright
+  # mkdir -p ${pkgdir}/usr/share/doc/cloudstack-ui/
+
+  mkdir -p ${pkgdir}/etc/cloudstack/ui
+  mkdir -p ${pkgdir}/usr/share/cloudstack-ui
+
+  cp -r ui/dist/config.json ${pkgdir}/etc/cloudstack/ui/
+  cp -r ui/dist/* ${pkgdir}/usr/share/cloudstack-ui/
+
+  rm -f ${pkgdir}/usr/share/cloudstack-ui/config.json
+  ln -s /etc/cloudstack/ui/config.json ${pkgdir}/usr/share/cloudstack-ui/config.json
+
+}
+
+package_cloudstack-common() {
+
+  depends=('python' 'jre11-openjdk')
+  pkgdesc='Common files for Apache CloudStack'
+  install=cloudstack-common.install
+
+  cd ${pkgbase}
+
+  # TODO: Missing doc files: INSTALL.md.gz, LICENSE.gz, NOTICE.gz, changelog.gz, copyright
+  # mkdir -p ${pkgdir}/usr/share/doc/cloudstack-common/
+
+  mkdir -p ${pkgdir}/usr/share/cloudstack-common/{scripts,setup,lib}
+
+  for i in installer network storage util vm; do
+    cp -r scripts/${i} ${pkgdir}/usr/share/cloudstack-common/scripts
+  done
+
+  # Fix: Add missing Cisco network files
+  cp -r client/target/common/scripts/network/cisco ${pkgdir}/usr/share/cloudstack-common/scripts/network/
+
+  # TODO: Missing utils/bindir/cloud-sccs -> usr/bin/cloud-sccs
+
+  install -D systemvm/dist/systemvm.iso ${pkgdir}/usr/share/cloudstack-common/vms/systemvm.iso
+
+  # We need jasypt for 'cloud-install-sys-tmplt' executable, so this is a nasty hack to get it into the right place
+  install -D agent/target/dependencies/jasypt-1.9.*.jar ${pkgdir}/usr/share/cloudstack-common/lib
+
+  # Fix: Populate network interfaces for CloudStack
+  mkdir -p ${pkgdir}/usr/lib/systemd/network/
+  install -Dm0644 ${srcdir}/cloudbr0.netdev ${pkgdir}/usr/lib/systemd/network/
+  install -Dm0644 ${srcdir}/cloudbr0.network ${pkgdir}/usr/lib/systemd/network/
+  install -Dm0644 ${srcdir}/cloudbr1.netdev ${pkgdir}/usr/lib/systemd/network/
+  install -Dm0644 ${srcdir}/cloudbr1.network ${pkgdir}/usr/lib/systemd/network/
+}
+
+package_cloudstack-cli() {
+
+  depends=('python' 'python-mysql-connector')
+  pkgdesc='Python bindings for Apache CloudStack (CLI)'
+
+  cd ${pkgbase}
+
+  mkdir -p ${pkgdir}/usr/lib/python${pythonver}/site-packages/
+  cp -r python/lib/cloud* ${pkgdir}/usr/lib/python${pythonver}/site-packages/
+}
+
+package_cloudstack-usage() {
+
+  depends=('jre11-openjdk' 'systemd')
+  pkgdesc='Usage Server for Apache CloudStack'
+  backup=(
+    etc/cloudstack/usage/db.properties
+  )
+
+  cd ${pkgbase}
+
+  # TODO: Missing doc files: INSTALL.md.gz, LICENSE.gz, NOTICE.gz, changelog.gz, copyright
+  # mkdir -p ${pkgdir}/usr/share/doc/cloudstack-usage/
+
+  mkdir -p ${pkgdir}/etc/cloudstack/usage
+  mkdir -p ${pkgdir}/usr/share/cloudstack-usage/{lib,plugins}
+  mkdir -p ${pkgdir}/var/log/cloudstack/usage
+
+  install -Dm0644 usage/target/cloud-usage-*.jar ${pkgdir}/usr/share/cloudstack-usage/
+  install -D usage/target/dependencies/* ${pkgdir}/usr/share/cloudstack-usage/lib/
+
+  cp client/target/lib/mysql*jar ${pkgdir}/usr/share/cloudstack-usage/lib/
+  cp usage/target/transformed/db.properties ${pkgdir}/etc/cloudstack/usage/
+  cp usage/target/transformed/log4j-cloud_usage.xml ${pkgdir}/etc/cloudstack/usage/log4j-cloud.xml
+
+  mkdir -p ${pkgdir}/usr/lib/systemd/system
+  install -m0644 packaging/systemd/cloudstack-usage.service ${pkgdir}/usr/lib/systemd/system/cloudstack-usage.service
+  install -Dm0644 packaging/systemd/cloudstack-usage.default ${pkgdir}/etc/default/cloudstack-usage
+
+}
+
+package_cloudstack-mysql-ha() {
+
+  pkgdesc='MySQL High Availability plugin for Apache CloudStack'
+  depends=('mysql' 'jre11-openjdk')
+
+  cd ${pkgbase}
+  mkdir -p ${pkgdir}/usr/share/cloudstack-mysql-ha/lib
+  install -Dm0644 plugins/database/mysql-ha/target/cloud-plugin-database-mysqlha-*.jar ${pkgdir}/usr/share/cloudstack-mysql-ha/lib/
+}
+
+# TODO: The executable script is not compatible with Arch Linux
+#package_cloudstack-baremetal-agent() {
+#
+#  pkgdesc='BareMetal PXE server for Apache CloudStack'
+#  depends=('python' 'xinetd' 'bash-completion' 'dhcp' 'tftp-hpa' 'iptables')
+#
+#  cd ${pkgbase}
+#
+#  mkdir -p ${pkgdir}/usr/bin
+#  install -Dm0755 client/target/utilities/bin/cloud-setup-baremetal ${pkgdir}/usr/bin/
+#}
+
+# TODO: Actual marvin toolset requires additional dependencies but
+# CloudStack project does not officially expose the installation procedure
+#package_cloudstack-marvin() {
+#
+#  depends=('python' 'python-mysql-connector' 'python-urllib3' 'python-setuptools')
+
+#          "mysql-connector-python >= 1.1.6",
+#          "requests >= 2.2.1",
+#          "paramiko >= 1.13.0",
+#          "nose >= 1.3.3",
+#          "ddt >= 0.4.0",
+#          "pyvmomi >= 5.5.0",
+#          "netaddr >= 0.7.14",
+#          "dnspython",
+#          "ipmisim >= 0.7",
+#          "pytz",
+#          "retries",
+#          "PyCrypt",
+#          "kubernetes",
+#          "urllib3",
+#          "setuptools >= 40.3.0"
+
+#  pkgdesc='Python client for Apache CloudStack'
+#
+#  cd ${pkgbase}
+#
+#  mkdir -p ${pkgdir}/usr/share/cloudstack-marvin
+#  cp tools/marvin/dist/Marvin-*.tar.gz ${pkgdir}/usr/share/cloudstack-marvin/
+#
+#}
+
+#package_cloudstack-integration-tests() {
+
+  # TODO: Missing doc files: INSTALL.md.gz, LICENSE.gz, NOTICE.gz, changelog.gz, copyright
+  # mkdir -p ${pkgdir}/usr/share/doc/cloudstack-integration-tests/
+
+#  pkgdesc='Integration tests for Apache CloudStack'
+#
+#  cd ${pkgbase}
+#
+#  mkdir -p ${pkgdir}/usr/share/cloudstack-integration-tests
+#  cp -r test/integration/* ${pkgdir}/usr/share/cloudstack-integration-tests/
+#
+#}
+
+#package_cloudstack-docs() {
+
+  # TODO: Missing doc files: INSTALL.md.gz, LICENSE.gz, NOTICE.gz, changelog.gz, copyright
+  # mkdir -p ${pkgdir}/usr/share/doc/cloudstack-docs/
+
+#  pkgdesc='Apache CloudStack docs'
+#
+#  cd ${pkgbase}
+#
+#}
