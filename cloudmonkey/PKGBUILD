@@ -1,0 +1,43 @@
+# Maintainer: Pekka Helenius <pekka.helenius@fjordtek.com>
+
+pkgname=cloudmonkey-git
+_pkgname=cloudmonkey
+pkgver=6.1.0.r22.g773fc17
+pkgrel=1
+pkgdesc='Command line interface for Apache CloudStack management'
+arch=('any')
+url='https://github.com/apache/cloudstack-cloudmonkey'
+license=('Apache2')
+depends=()
+provides=('cloudmonkey')
+makedepends=('git' 'go' 'make')
+source=(
+  "${pkgname}::git+https://github.com/apache/cloudstack-cloudmonkey.git"
+)
+sha256sums=('SKIP')
+
+pkgver() {
+  cd $pkgname
+  git describe --long | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+build() {
+  cd $pkgname
+
+  GOPATH="$srcdir" go build \
+    -trimpath \
+    -buildmode=pie \
+    -mod=readonly \
+    -modcacherw \
+    -ldflags "-s -w" \
+    -o ${_pkgname} .
+
+}
+
+package() {
+  cd $pkgname
+
+  install -Dm 755 ${_pkgname} "$pkgdir/usr/bin/${_pkgname}"
+  install -Dm 644 -t "$pkgdir/usr/share/doc/${_pkgname}/" README.md
+  install -Dm 644 LICENSE "$pkgdir/usr/share/licenses/${_pkgname}/LICENSE"
+}
