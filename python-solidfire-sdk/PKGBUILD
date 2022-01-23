@@ -1,0 +1,32 @@
+# Maintainer: Pekka Helenius <pekka dot helenius at fjordtek dot com>
+
+pkgname=python-solidfire-sdk-git
+_pkgname=solidfire-sdk-python
+pkgver=12.3.1.r0.g49fe23e
+pkgrel=1
+pkgdesc='SolidFire Python SDK for application integration'
+arch=('any')
+url='https://solidfire.github.io/solidfire-sdk-python/'
+license=('Apache2')
+depends=('python')
+makedepends=('python-setuptools')
+provides=(python-solidfire-sdk)
+source=(
+  ${pkgname}::git+https://github.com/solidfire/${_pkgname}
+)
+sha256sums=('SKIP')
+
+pkgver() {
+  cd $pkgname
+  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+build() {
+  cd $pkgname
+  python setup.py build
+}
+
+package() {
+  cd $pkgname
+  python setup.py install --root="$pkgdir" --prefix=/usr -O1 --skip-build
+}
