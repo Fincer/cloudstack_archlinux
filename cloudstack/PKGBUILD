@@ -104,6 +104,8 @@ source=(
   "cloudbr0.network"
   "cloudbr1.netdev"
   "cloudbr1.network"
+  "cloudbr2.netdev"
+  "cloudbr2.network"
 )
 
 if [[ ${skip_tests} == "true" ]]; then
@@ -125,9 +127,11 @@ sha256sums=('SKIP'
             '2515da6f9195c7e3bce321bd328743ee4c685ccd01ddb4099202637036eab40e'
             '69b315a10f88c24d6fe2b248b0593691d656f8992e6e37f8b0a4d2d4a9caca40'
             '4d5d5c4d923ceec434403fc416a4d09a820fdb49ece6e4f6d0b32a05014446be'
-            'c12612ebca5c968c3648b858a1c23961963cf04d3a9f476400a0f3861952c7fd'
+            'e3be7fda05b639c1b82db854347262f8206639f78f13d5f207b52c9f6a126a8d'
             'dfc16a17e57b9d174aae8abee6c04b8a6b02ffc96909315f302199e43dea9b9e'
-            '49c7271d095eb7ba4d724edc615af99646bae4b7fa57ef6502e14ad452e6d602'
+            '2fa8cf39924356c5af6403f09ac17930b6d4f38c509cd655f36f705d1dc9d280'
+            '1bd92d5f69a49c03a492e96f03efdebcef88a73948410511b715339735e15d3f'
+            '0ce7c6173c80fa74de5a473336ab099337e9248cceef3b7b33c7199baf71aa33'
             'SKIP')
 
 pkgver() {
@@ -275,7 +279,7 @@ storage.scripts.dir=scripts/storage/qcow2
 
 public.network.device=cloudbr0
 private.network.device=cloudbr1
-#guest.network.device=
+guest.network.device=cloudbr2
 
 #ipv6disabled=true
 

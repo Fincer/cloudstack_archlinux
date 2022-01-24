@@ -1,0 +1,5 @@
+# Bridge interface for Apache CloudStack
+
+[NetDev]
+Name=cloudbr2
+Kind=bridge

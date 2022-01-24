@@ -5,5 +5,5 @@ Name=cloudbr0
 ConfigureWithoutCarrier=yes
 
 [Address]
-Address=172.20.0.1/24
-Broadcast=172.20.0.255
+Address=10.70.0.1/16
+Broadcast=10.70.255.255
