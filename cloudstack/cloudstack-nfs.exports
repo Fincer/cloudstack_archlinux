@@ -1,0 +1,12 @@
+# Apache CloudStack NFS exports
+
+# Sample configuration file. Configure for your needs.
+
+# The async flag improves performance by allowing the NFS server to respond before writes are committed to the disk.
+# Remove the async flag in your mission critical production deployment.
+
+# Primary storage
+/var/lib/cloudstack/data/storage/primary/ 10.71.0.0/16(rw,async,no_root_squash,no_subtree_check)
+
+# Secondary storage
+/var/lib/cloudstack/data/storage/secondary/ 10.71.0.0/16(rw,async,no_root_squash,no_subtree_check)

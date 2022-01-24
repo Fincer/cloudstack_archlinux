@@ -8,22 +8,24 @@ post_install() {
   fi
 
   chown cloud.cloud /var/log/cloudstack
-#  chown cloud.cloud /run/cloudstack-management.pid
+  chown cloud.cloud /var/lib/cloudstack/data/
 
-  # Apply cloudbr0 & cloudbr1 network interfaces
+  # Apply cloudbr0, cloudbr1 & cloudbr2 network interfaces
   systemctl restart systemd-networkd 
   systemctl restart mysqld
 
   msg2 "Configuration info: http://docs.cloudstack.apache.org/en/latest/installguide/management-server/"
 
   msg2 "System VM template files are located at '/usr/share/cloudstack-management/templates/systemvm/'"
-  msg2 "Install it by issuing command: sudo /usr/share/cloudstack-common/scripts/storage/secondary/cloud-install-sys-tmplt -o localhost -r cloud -d cloud -h kvm -f /usr/share/cloudstack-management/templates/systemvm/systemvmtemplate-4.16.0-kvm.qcow2.bz2 -m <secondary-storage-mountpoint>"
+  msg2 "Install the template by issuing command: sudo /usr/share/cloudstack-common/scripts/storage/secondary/cloud-install-sys-tmplt -o localhost -r cloud -d cloud -h kvm -f /usr/share/cloudstack-management/templates/systemvm/systemvmtemplate-4.16.0-kvm.qcow2.bz2 -m /var/lib/cloudstack/data/storage/secondary/"
+  msg2 "Once the template is deployed, configure /etc/exports.d/cloudstack.exports file and restart NFS service"
 
   msg2 "Generate proper encryption file (/etc/cloudstack/management/key): sudo cloudstack-setup-encryption -e file -m <password> -k <password>"
 
-  msg2 "Configure local database: sudo cloudstack-setup-databases cloud:cloud@localhost --deploy-as=root:<mysql-root-password>"
+  msg2 "Deploy local CloudStack database: sudo cloudstack-setup-databases cloud:cloud@localhost --deploy-as=root:<mysql-root-password>"
+  msg2 "Be aware you can use a separate MySQL server for storing the data"
 
-  msg2 "http://localhost:8080 default login credentials are -> username: admin, password: <password> (used for /etc/cloudstack/management/key), domain: leave empty"
+  msg2 "CloudStack UI: http://localhost:8080 ; Default login credentials are -> username: admin, password: <password> (used for /etc/cloudstack/management/key), domain: leave empty"
 }
 
 #post_upgrade() {

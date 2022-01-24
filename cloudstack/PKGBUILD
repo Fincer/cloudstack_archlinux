@@ -63,6 +63,7 @@ depends=(
   'iptables-nft'
 
   'ipmitool'
+  'nfs-utils'
 )
 makedepends=(
   # CloudStack source retrieval
@@ -95,10 +96,13 @@ optdepends=(
 source=(
   "${pkgbase}::git+https://github.com/apache/${pkgbase}.git#commit=${_commit}"
   "cloudstack.sysuser.conf"
+  "cloudstack.mysql.conf"
   "uefi.properties"
+
+  "cloudstack-nfs.exports"
+
   "patch_domr-path.patch"
   "patch_python3.patch"
-  "cloudstack.mysql.conf"
 
   "cloudbr0.netdev"
   "cloudbr0.network"
@@ -122,10 +126,11 @@ fi
 
 sha256sums=('SKIP'
             '1ad0d6b9a15889763bea92c71ecf9dc44e11e408260cdc54efa4d7acd849230f'
+            '69b315a10f88c24d6fe2b248b0593691d656f8992e6e37f8b0a4d2d4a9caca40'
             '2ac98910f320785ebbc682a426f4eef6d8b4ca5c8c55195dc4c048072fa93fb6'
+            '099a4e36ced56cebb8e0d4c058582bc549a1b75b87f889bbd3bb7f83c17134db'
             '8691b6b47164d11d3c1eff90a0108e694427463fb3d49608628a5d0121b6a5d4'
             '2515da6f9195c7e3bce321bd328743ee4c685ccd01ddb4099202637036eab40e'
-            '69b315a10f88c24d6fe2b248b0593691d656f8992e6e37f8b0a4d2d4a9caca40'
             '4d5d5c4d923ceec434403fc416a4d09a820fdb49ece6e4f6d0b32a05014446be'
             'e3be7fda05b639c1b82db854347262f8206639f78f13d5f207b52c9f6a126a8d'
             'dfc16a17e57b9d174aae8abee6c04b8a6b02ffc96909315f302199e43dea9b9e'
@@ -292,7 +297,7 @@ libvirt.vif.driver=com.cloud.hypervisor.kvm.resource.BridgeVifDriver
 
 package_cloudstack-management() {
 
-  depends=('python' 'jre11-openjdk' 'mysql' 'systemd' 'ipmitool')
+  depends=('python' 'jre11-openjdk' 'mysql' 'systemd' 'ipmitool' 'nfs-utils')
   pkgdesc='Management for Apache CloudStack'
   install=cloudstack-management.install
   noextract=(
@@ -317,6 +322,9 @@ package_cloudstack-management() {
   mkdir -p ${pkgdir}/var/cache/cloudstack/management
   mkdir -p ${pkgdir}/var/log/cloudstack/{management,ipallocator}
   mkdir -p ${pkgdir}/var/lib/cloudstack/{management,mnt}
+
+  # Fix: Allocate paths for NFS exports
+  mkdir -p ${pkgdir}/var/lib/cloudstack/data/storage/{primary,secondary}
 
   cp -r client/target/utilities/scripts/db/* ${pkgdir}/usr/share/cloudstack-management/setup/
   cp -r ui/dist/* ${pkgdir}/usr/share/cloudstack-management/webapp/
@@ -367,6 +375,10 @@ package_cloudstack-management() {
   # Fix: Add missing 'cloud' user to the system
   mkdir -p ${pkgdir}/usr/lib/sysusers.d
   install -Dm0644 ${srcdir}/cloudstack.sysuser.conf ${pkgdir}/usr/lib/sysusers.d/cloudstack.conf
+
+  # Fix: Add missing NFS exports file
+  mkdir -p ${pkgdir}/etc/exports.d
+  install -Dm0644 ${srcdir}/cloudstack-nfs.exports ${pkgdir}/etc/exports.d/cloudstack.exports
 
   # Fix: Set global database configuration values
   mkdir -p ${pkgdir}/etc/mysql/conf.d/
