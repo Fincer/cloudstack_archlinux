@@ -331,14 +331,14 @@ package_cloudstack-management() {
   cp -r client/target/classes/META-INF/webapp/WEB-INF ${pkgdir}/usr/share/cloudstack-management/webapp/
 
   for i in \
-  cloud-migrate-databases \
-  cloud-setup-databases \
-  cloud-setup-management \
-  cloud-setup-encryption \
-  cloud-sysvmadm \
-  cloud-update-xenserver-licenses \
-  cloud-set-guest-password \
-  cloud-set-guest-sshkey
+    cloud-migrate-databases \
+    cloud-setup-databases \
+    cloud-setup-management \
+    cloud-setup-encryption \
+    cloud-sysvmadm \
+    cloud-update-xenserver-licenses \
+    cloud-set-guest-password \
+    cloud-set-guest-sshkey
   do
     install -D client/target/utilities/bin/${i} ${pkgdir}/usr/bin/$(echo ${i} | sed 's/cloud\-/cloudstack\-/')
   done
