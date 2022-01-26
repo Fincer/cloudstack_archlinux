@@ -200,7 +200,7 @@ USAGECLASSPATH=
 USAGELOG=/var/log/cloudstack/usage/usage.log
 USAGESYSCONFDIR=/etc/cloudstack/usage
 VERSION=$(printf "%s" $(git describe --long --tags | cut -d- -f1))
-" >> build/replace.properties
+" > build/replace.properties
 
 }
 
