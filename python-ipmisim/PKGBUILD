@@ -1,0 +1,39 @@
+# Maintainer: Pekka Helenius <pekka dot helenius at fjordtek dot com>
+
+pkgname=python-ipmisim-git
+_pkgname=ipmisim
+pkgver=0.10.r0.g62dd7c0
+pkgrel=1
+pkgdesc='Fake IPMI server based on conpot and pyghmi'
+arch=('any')
+url='https://pypi.org/project/ipmisim/'
+license=('Apache2')
+depends=(
+  'python'
+  'python-pycrypto' #AUR package
+  'python-future'
+
+  'python-pyghmi'
+)
+makedepends=('python-setuptools')
+provides=(python-ipmisim)
+conflicts=(python-ipmisim)
+source=(
+  ${pkgname}::git+https://github.com/shapeblue/${_pkgname}
+)
+sha256sums=('SKIP')
+
+pkgver() {
+  cd $pkgname
+  git describe --long --tags | sed 's/^[a-z]//;s/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+build() {
+  cd $pkgname
+  python setup.py build
+}
+
+package() {
+  cd $pkgname
+  python setup.py install --root="$pkgdir" --prefix=/usr -O1 --skip-build
+}

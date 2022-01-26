@@ -1,0 +1,33 @@
+# Maintainer: Pekka Helenius <pekka dot helenius at fjordtek dot com>
+
+pkgname=python-pycrypt-git
+_pkgname=pycrypt
+pkgver=0.7.2.r0.gb665333
+pkgrel=1
+pkgdesc='A fast C extension for TwoFish encryption in Python'
+arch=('any')
+url='https://pypi.org/project/pycrypt/'
+license=('Apache2')
+depends=('python')
+makedepends=('python-setuptools' 'gcc')
+provides=(python-pycrypt)
+conflicts=(python-pycrypt)
+source=(
+  ${pkgname}::git+https://github.com/Noctem/${_pkgname}
+)
+sha256sums=('SKIP')
+
+pkgver() {
+  cd $pkgname
+  git describe --long --tags | sed 's/^[a-z]//;s/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+build() {
+  cd $pkgname
+  python setup.py build
+}
+
+package() {
+  cd $pkgname
+  python setup.py install --root="$pkgdir" --prefix=/usr -O1 --skip-build
+}

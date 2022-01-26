@@ -1,0 +1,33 @@
+# Maintainer: Pekka Helenius <pekka dot helenius at fjordtek dot com>
+
+pkgname=python-pyghmi-git
+_pkgname=pyghmi
+pkgver=1.5.33.r5.ge1e5fa98
+pkgrel=1
+pkgdesc='A Pure python IPMI library'
+arch=('any')
+url='https://pypi.org/project/pyghmi/'
+license=('Apache2')
+depends=('python')
+makedepends=('python-setuptools' 'python-pbr')
+provides=(python-pyghmi)
+conflicts=(python-pyghmi)
+source=(
+  ${pkgname}::git+https://opendev.org/x/${_pkgname}
+)
+sha256sums=('SKIP')
+
+pkgver() {
+  cd $pkgname
+  git describe --long --tags | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
+}
+
+build() {
+  cd $pkgname
+  python setup.py build
+}
+
+package() {
+  cd $pkgname
+  python setup.py install --root="$pkgdir" --prefix=/usr -O1 --skip-build
+}
