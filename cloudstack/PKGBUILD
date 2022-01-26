@@ -511,36 +511,47 @@ package_cloudstack-mysql-ha() {
 #  install -Dm0755 client/target/utilities/bin/cloud-setup-baremetal ${pkgdir}/usr/bin/
 #}
 
-# TODO: Actual marvin toolset requires additional dependencies but
-# CloudStack project does not officially expose the installation procedure
-#package_cloudstack-marvin() {
-#
-#  depends=('python' 'python-mysql-connector' 'python-urllib3' 'python-setuptools')
-
-#          "mysql-connector-python >= 1.1.6",
-#          "requests >= 2.2.1",
-#          "paramiko >= 1.13.0",
-#          "nose >= 1.3.3",
-#          "ddt >= 0.4.0",
-#          "pyvmomi >= 5.5.0",
-#          "netaddr >= 0.7.14",
-#          "dnspython",
-#          "ipmisim >= 0.7",
-#          "pytz",
-#          "retries",
-#          "PyCrypt",
-#          "kubernetes",
-#          "urllib3",
-#          "setuptools >= 40.3.0"
-
-#  pkgdesc='Python client for Apache CloudStack'
-#
-#  cd ${pkgbase}
-#
-#  mkdir -p ${pkgdir}/usr/share/cloudstack-marvin
-#  cp tools/marvin/dist/Marvin-*.tar.gz ${pkgdir}/usr/share/cloudstack-marvin/
-#
-#}
+# TODO: missing build-time directory
+# tools/marvin/marvin/cloudstackAPI
+# package_cloudstack-marvin() {
+# 
+#   depends=(
+#     'python'
+#     'python-mysql-connector'
+#     'python-urllib3'
+#     'python-paramiko'
+#     'python-requests'
+#     'python-nose'
+#     'python-ddt'
+#     'python-pyvmomi' #AUR package
+#     'python-netaddr'
+#     'python-dnspython'
+#     'python-pytz'
+#     'python-kubernetes'
+# 
+#     'python-ipmisim'
+#     'python-pycrypt'
+#     # TODO: missing Python dependency: 'retries'
+#   )
+# 
+#   makedepends=(
+#     'python-setuptools'
+#   )
+# 
+#   pkgdesc='Python client for Apache CloudStack'
+# 
+#   cd ${pkgbase}/tools/marvin
+# 
+#   # TODO: Should we build this package in build() section?
+#   python setup.py build
+# 
+#   python setup.py install --root="$pkgdir" --prefix=/usr -O1 --skip-build
+#   
+#   # TODO: Deprecate this part
+#   #mkdir -p ${pkgdir}/usr/share/cloudstack-marvin
+#   #cp tools/marvin/dist/Marvin-*.tar.gz ${pkgdir}/usr/share/cloudstack-marvin/
+# 
+# }
 
 #package_cloudstack-integration-tests() {
 
