@@ -31,6 +31,9 @@ post_install() {
 #post_upgrade() {
 #}
 
-#post_remove() {
-#  rm -rf /var/lib/cloudstack/user
-#}
+post_remove() {
+  msg2 "CloudStack logs are stored at '/var/log/cloudstack'"
+  rm -rf /var/lib/cloudstack
+  userdel cloud
+  systemctl restart systemd-networkd
+}
