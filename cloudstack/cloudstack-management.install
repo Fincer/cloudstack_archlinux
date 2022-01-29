@@ -4,10 +4,13 @@ post_install() {
 
   if [[ ! -d /var/lib/cloudstack/user ]]; then
     mkdir -p /var/lib/cloudstack/user
-    chown cloud.cloud -R /var/lib/cloudstack/user
   fi
 
-  chown cloud.cloud /var/log/cloudstack
+  chown cloud.cloud -R /var/lib/cloudstack/user
+
+  chown cloud.cloud /var/log/cloudstack/management
+  chown cloud.cloud /var/log/cloudstack/ipallocator
+
   chown cloud.cloud /var/lib/cloudstack/data/
 
   # Apply cloudbr0, cloudbr1 & cloudbr2 network interfaces
