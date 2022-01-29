@@ -17,6 +17,9 @@ post_install() {
   systemctl restart systemd-networkd 
   systemctl restart mysqld
 
+  # Generate ssh keypair for user 'cloud'
+  runuser -l cloud -s /bin/sh -c "ssh-keygen -N '' -f /var/lib/cloudstack/user/.ssh/id_rsa"
+
   msg2 "Configuration info: http://docs.cloudstack.apache.org/en/latest/installguide/management-server/"
 
   msg2 "System VM template files are located at '/usr/share/cloudstack-management/templates/systemvm/'"

@@ -64,6 +64,7 @@ depends=(
 
   'ipmitool'
   'nfs-utils'
+  'openssh'
 )
 makedepends=(
   # CloudStack source retrieval
@@ -297,7 +298,7 @@ libvirt.vif.driver=com.cloud.hypervisor.kvm.resource.BridgeVifDriver
 
 package_cloudstack-management() {
 
-  depends=('python' 'jre11-openjdk' 'mysql' 'systemd' 'ipmitool' 'nfs-utils')
+  depends=('python' 'jre11-openjdk' 'mysql' 'systemd' 'ipmitool' 'nfs-utils' 'openssh')
   pkgdesc='Management for Apache CloudStack'
   install=cloudstack-management.install
   noextract=(
